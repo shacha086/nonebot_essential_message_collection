@@ -1,16 +1,16 @@
-from asyncio import Task
-import asyncio
-from io import BytesIO
 import re
+import asyncio
 import aiohttp
 import tinycss2
 from PIL import Image
 from lxml import etree
+from io import BytesIO
+from .Enums import Size
 from pathlib import Path
-# from .objects import Object
-from typing import Any, Coroutine, Dict, List, Optional, Tuple
+from .objects import Object
 from tinycss2.ast import QualifiedRule
 from nonebot.adapters.onebot.v11.bot import Bot
+from typing import Any, Coroutine, Dict, List, Optional, Tuple
 from nonebot.adapters.onebot.v11.message import MessageSegment
 from nonebot.adapters.onebot.v11.exception import ActionFailed
 
@@ -27,6 +27,9 @@ def get_image_path(name: str) -> Path:
 def is_image_existed(name: str) -> bool:
     return get_image_path(name).exists()
 
+def get_downloaded_image_path(segment: MessageSegment) -> Path:
+    check_type(segment, "image")
+    return get_image_path(segment.data['file'].removeprefix("file:///").removesuffix(".image"))
 
 def get_downloaded_image_segment(segment: MessageSegment) -> MessageSegment:
     check_type(segment, "image")
@@ -71,6 +74,11 @@ async def download_image(url: str) -> bytes:
 
 def get_member_name(member: Dict[str, Any]) -> str:
     return member["card"] or member["nickname"]
+
+
+async def get_member_icon(user_id: int, size: Size = Size.px1080) -> Image.Image:
+    url = f"https://q1.qlogo.cn/g?b=qq&s={size.value}&nk={user_id}"
+    return await download_image_as_pil_Image(url, convert='RGBA')
 
 
 async def get_member_plain_text_name(bot: Bot, group_id: int, user_id: int) -> str:
@@ -254,3 +262,13 @@ def revert_listed_chinese_char(pair: Tuple[List[str], Optional[Dict[str, str]]])
         new_list.append(new_text)
     
     return new_list
+
+
+def crop_margin(image: Image.Image, crops: Tuple[bool, bool, bool, bool]=(True, True, True, True), padding: Tuple[int, int, int, int]=(0, 0, 0, 0)):
+    bbox = image.getbbox()
+    left = bbox[0] - padding[0]
+    top = bbox[1] - padding[1]
+    right = bbox[2] + padding[2]
+    bottom = bbox[3] + padding[3]
+    return image.crop([left, top, right, bottom])
+

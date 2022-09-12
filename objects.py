@@ -20,3 +20,8 @@ class Object:
     def image_path() -> Path:
         (path := Object.data_path() / 'images').mkdir(parents=True, exist_ok=True)
         return path
+
+    @staticmethod
+    def resources_path() -> Path:
+        return Path(__file__).parent / 'resources'
+
