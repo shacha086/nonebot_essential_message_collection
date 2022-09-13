@@ -1,4 +1,5 @@
 import re
+import zlib
 import asyncio
 import aiohttp
 import tinycss2
@@ -178,6 +179,14 @@ async def wrap(func: Coroutine, **kwargs):
     _ = kwargs.copy()
     _['result'] = await func
     return _
+
+
+def seq_to_global_id(code: int, msg_id: int) -> int:
+    return zlib.crc32(bytes(f"{code}-{msg_id}", 'utf8'))
+
+
+async def get_cookie(bot: Bot, domain: str = "") -> str:
+    return (await bot.get_cookies(domain=domain))['cookies']
 
 
 async def get_member_identity(qq: int, group_id: int, cookie: str) -> List[Image.Image]:
