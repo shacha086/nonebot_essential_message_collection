@@ -173,13 +173,14 @@ async def handle_clear(bot: Bot, event: GroupMessageEvent):
     await matcher.finish(f"清理完成！本次清除了{len(del_list)}张图片 .w.")
 
 
-async def render_message(bot: Bot, user_id: int, group_id: int, message: v11Message):
+async def render_message(bot: Bot, user_id: int, group_id: int, message: v11Message) -> Image.Image:
     ROOT = Path(__file__).parent / "resources"
     font = ROOT / "MILanPro_Regular.ttf"
     emoji_font = ROOT / "AppleColorEmoji.ttf"
 
     tasks = []
     new_message = []
+
     for segment in message:
         if segment.type == 'image':
             new_segment = get_downloaded_image_segment(segment)
@@ -191,6 +192,9 @@ async def render_message(bot: Bot, user_id: int, group_id: int, message: v11Mess
 
     if tasks:
         await asyncio.wait(tasks)
+
+    if len(new_message) == 1 and new_message[0].type =='image':
+        return Image.open(get_downloaded_image_path(new_message[0])).convert("RGBA")
 
     img = await Text2Image.from_message(  # type: ignore
         message=new_message,
