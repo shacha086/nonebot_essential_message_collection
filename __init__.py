@@ -220,20 +220,20 @@ async def render_message(bot: Bot, user_id: int, group_id: int, message: v11Mess
     # canvas.save(buffer, 'png')
     # await matcher.finish(MessageSegment.image(buffer))
 
-matcher = on_command("test")
-@matcher.handle()
-async def _(bot: Bot, event: GroupMessageEvent):
-    with Session() as session:
-        dians: List[Essences] = session.query(Essences).filter(
-            Essences.group_id == event.group_id
-        ).all()
-        if not dians:
-            await matcher.finish("你群还没有典 /w\\")
-        for dian in dians:
-            message: v11Message = [from_dict(data_class=MessageSegment, data=it)
-                                for it in json.loads(dian.message)]  # type: ignore
-            canvas = await render_message(bot, dian.sender_id, dian.group_id, message)
+# matcher = on_command("test")
+# @matcher.handle()
+# async def _(bot: Bot, event: GroupMessageEvent):
+#     with Session() as session:
+#         dians: List[Essences] = session.query(Essences).filter(
+#             Essences.group_id == event.group_id
+#         ).all()
+#         if not dians:
+#             await matcher.finish("你群还没有典 /w\\")
+#         for dian in dians:
+#             message: v11Message = [from_dict(data_class=MessageSegment, data=it)
+#                                 for it in json.loads(dian.message)]  # type: ignore
+#             canvas = await render_message(bot, dian.sender_id, dian.group_id, message)
     
-            buffer = BytesIO()
-            canvas.save(buffer, 'png')
-            await matcher.send(MessageSegment.image(buffer))
+#             buffer = BytesIO()
+#             canvas.save(buffer, 'png')
+#             await matcher.send(MessageSegment.image(buffer))
