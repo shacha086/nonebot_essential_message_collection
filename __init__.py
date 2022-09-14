@@ -79,7 +79,6 @@ async def add_essence_message(bot: Bot, message_id: int, group_id: int, operator
             session.add_all(img)
         session.commit()
 
-
 matcher = on_notice(
     rule=lambda event: event.notice_type == 'essence'
 )
@@ -87,6 +86,7 @@ matcher = on_notice(
 @matcher.handle()
 async def onEssenceMessageEvent(bot: Bot, event: NoticeEvent):
     event: EssenceMessageEvent = event
+
     if event.sub_type == 'add':
         try:
             message_dict = await bot.get_msg(message_id=event.message_id)
@@ -109,6 +109,19 @@ async def onEssenceMessageEvent(bot: Bot, event: NoticeEvent):
         await bot.send_group_msg(group_id=event.group_id, message="🤖检测到移除精华消息, 已处理数据库中的相关信息")
 
 
+matcher = on_command("deep_sync")
+@matcher.handle()
+async def handle_deep_sync(bot: Bot, event: GroupMessageEvent):
+    if event.sender.role not in ['owner', 'admin']:
+        await matcher.finish("这个操作只有管理员及以上才能完成！")
+            
+    with Session() as session:
+        session.query(Essences).filter(
+             Essences.group_id == event.group_id).delete()
+        session.commit()
+                                                    
+    await handle_sync(bot, event)
+
 matcher = on_command("同步精华消息")
 
 @matcher.handle()
@@ -116,6 +129,8 @@ async def handle_sync(bot: Bot, event: GroupMessageEvent):
     essence_list: List[EssenceMessage] = await get_essence_list(group_id=event.group_id, cookie=await get_cookie(bot, domain="qun.qq.com"))
     with Session() as session:
         saved_essence: List[Tuple[int, int]] = session.query(Essences.group_id, Essences.message_id).all() or []
+    if not essence_list or saved_essence:
+        await matcher.finish("没有新增的精华消息🤔")
     count = 0
     task: List[Task] = []
     for essence in essence_list:
@@ -130,11 +145,12 @@ async def handle_sync(bot: Bot, event: GroupMessageEvent):
                 await essence.to_message()
             )))
             count += 1
-    await asyncio.wait(task)
+    if task:
+        await asyncio.wait(task)
     await matcher.finish(f"同步完成，新增了{count}条消息")
 
 
-matcher = on_command("来个典")
+matcher = on_command("来个典", aliases={"爆个典", "爆典", "典"})
 
 @matcher.handle()
 async def handle_dian(bot: Bot, event: GroupMessageEvent):
@@ -151,8 +167,10 @@ async def handle_dian(bot: Bot, event: GroupMessageEvent):
 
         buffer = BytesIO()
         canvas.save(buffer, 'png')
-    await matcher.finish(MessageSegment.image(buffer))
-
+    try:
+        await matcher.send(MessageSegment.image(buffer))
+    except:
+        await matcher.finish("出错了")
 
 matcher = on_command("清理图片")
 
