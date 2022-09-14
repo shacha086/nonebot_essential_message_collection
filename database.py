@@ -22,6 +22,12 @@ class Pictures(ModelBase):
     message_id = Column(Integer)
     hash = Column(String())
 
+class Groups(ModelBase):
+    __tablename__ = 'groups'
+    qq_group_id = Column(Integer, primary_key=True)
+    tg_chat_id = Column(Integer, unique=True)
+    token = Column(String())
+
 engine = create_engine(f"sqlite:///{Object.db_path()}")
 if not database_exists(engine.url):
     create_database(engine.url)
